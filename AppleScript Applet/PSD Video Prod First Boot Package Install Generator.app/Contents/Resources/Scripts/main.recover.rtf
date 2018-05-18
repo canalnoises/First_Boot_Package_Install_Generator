@@ -12,8 +12,10 @@ use \cf4 scripting additions\cf2 \
 \
 property \cf6 packageName\cf2  : "PSD_Video-PostImage-FirstBoot"\
 property \cf6 packageID\cf2  : "org.ldschurch.psd.PSD_Video-PostImage-FirstBoot"\
+property \cf6 fb_installers_folder\cf2  : "Storage:isaacnelson1:OneDrive - LDS Church:Casper Stuff:Packages and Scripts:PSD First Boot:Video Production First Boot:Packages to install:"\
 \
 on \cf4 run\cf2 \
+	\
 	\cf5 -------------------------------\cf2 \
 	\cf5 --Application_Path_Locator.scpt\cf2 \
 	\cf5 -- This set command passes the location of the application\cf2 \
@@ -38,7 +40,8 @@ on \cf4 run\cf2 \
 	\cf4 activate\cf2 \
 	\
 	\cf5 --Select the folder with the installers to add to the first boot installer package\cf2 \
-	set \cf6 fb_installers_folder\cf2  to \cf3 quoted form\cf2  of \cf3 POSIX path\cf2  of (\cf7 choose folder\cf2  \cf7 with prompt\cf2  "Select the folder with the installers which you want to add to your first boot installer package." \cf7 default location\cf2  (\cf7 path to\cf2  \cf8 desktop\cf2  \cf7 as\cf2  \cf4 alias\cf2 ))\
+	tell \cf4 application\cf2  "Finder" to if not (\cf4 exists\cf2  \cf6 fb_installers_folder\cf2 ) then set \cf6 fb_installers_folder\cf2  to (\cf7 path to\cf2  \cf3 desktop\cf2  \cf7 as\cf2  \cf4 text\cf2 )\
+	set \cf6 fb_installers_folder\cf2  to \cf3 quoted form\cf2  of \cf3 POSIX path\cf2  of (\cf7 choose folder\cf2  \cf7 with prompt\cf2  "Select the folder with the installers which you want to add to your first boot installer package." \cf7 default location\cf2  (\cf4 file\cf2  \cf6 fb_installers_folder\cf2 ))\
 	\
 	\cf5 --Copy those packages to a temporary folder\cf2 \
 	\cf7 do shell script\cf2  "cp -Rf " & \cf6 fb_installers_folder\cf2  & " /tmp/fb_installers/"\
