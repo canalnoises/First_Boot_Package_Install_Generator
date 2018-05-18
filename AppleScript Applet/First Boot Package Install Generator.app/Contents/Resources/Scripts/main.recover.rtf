@@ -1,0 +1,156 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red108\green5\blue211;\red0\green0\blue255;
+\red76\green78\blue78;\red64\green128\blue0;\red0\green22\blue176;\red68\green21\blue176;}
+{\*\expandedcolortbl;;\csgenericrgb\c0\c0\c0;\csgenericrgb\c42337\c1841\c82833;\csgenericrgb\c0\c0\c100000;
+\csgenericrgb\c29999\c30457\c30457;\csgenericrgb\c25000\c50001\c0;\csgenericrgb\c0\c8656\c68986;\csgenericrgb\c26552\c8264\c69162;}
+\deftab480
+\pard\pardeftab480\slleading40\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 use \cf3 AppleScript\cf2  \cf4 version\cf2  "2.4" \cf5 -- Yosemite (10.10) or later\cf2 \
+use \cf4 scripting additions\cf2 \
+\
+on \cf4 run\cf2 \
+	\cf5 -------------------------------\cf2 \
+	\cf5 --Application_Path_Locator.scpt\cf2 \
+	\cf5 -- This set command passes the location of the application\cf2 \
+	\cf5 -- to the following shell script, which uses it to copy the\cf2 \
+	\cf5 -- prebuilt component parts to be copied to /tmp\cf2 \
+	\cf5 -- Source: http://apple.stackexchange.com/questions/23725/is-automator-intended-to-create-distributable-stand-alone-apps\cf2 \
+	\
+	set \cf6 appPath\cf2  to \cf3 quoted form\cf2  of \cf3 POSIX path\cf2  of (\cf7 path to\cf2  me)\
+	\cf5 -------------------------------\cf2 \
+	\
+	\cf5 -------------------------------\cf2 \
+	\
+	\cf5 -- This script removes any existing copies of the prebuilt component parts\cf2 \
+	\cf5 -- of the first boot package installer from /tmp. New copies of the tar files\cf2 \
+	\cf5 -- containing the prebuilt component parts is then copied to /tmp.\cf2 \
+	\
+	\cf7 do shell script\cf2  \cf6 appPath\cf2  & "/Contents/Resources/Scripts/prebuilt_component_parts_copy_script.sh " & \cf6 appPath\cf2 \
+	\cf5 -------------------------------\cf2 \
+	\
+	\cf5 -------------------------------\cf2 \
+	\cf5 --Replicate Automator actions\cf2 \
+	\cf4 activate\cf2 \
+	\
+	\cf5 --Select the folder with the installers to add to the first boot installer package\cf2 \
+	set \cf6 fb_installers_folder\cf2  to \cf3 quoted form\cf2  of \cf3 POSIX path\cf2  of (\cf7 choose folder\cf2  \cf7 with prompt\cf2  "Select the folder with the installers which you want to add to your first boot installer package." \cf7 default location\cf2  (\cf7 path to\cf2  \cf8 desktop\cf2  \cf7 as\cf2  \cf4 alias\cf2 ))\
+	\
+	\cf5 --Copy those packages to a temporary folder\cf2 \
+	\cf7 do shell script\cf2  "cp -Rf " & \cf6 fb_installers_folder\cf2  & " /tmp/fb_installers/"\
+	\
+	\cf5 -------------------------------\cf2 \
+	\
+	\cf5 -- this repeat loop prevents empty strings from being submitted for the package name value\cf2 \
+	set \cf6 q\cf2  to 0\
+	repeat while \cf6 q\cf2  is 0\
+		set \cf3 result\cf2  to \cf8 text returned\cf2  of (\cf7 display dialog\cf2  "Enter a name for the first boot installer package:" \cf7 default answer\cf2  "First Boot Package Install")\
+		if \cf3 result\cf2  is not "" then\
+			set \cf6 pkgname\cf2  to \cf3 result\cf2 \
+			set \cf6 q\cf2  to 1\
+		end if\
+	end repeat\
+	\cf5 -- this repeat loop prevents empty strings from being submitted for the package identifier value\cf2 \
+	set \cf6 q\cf2  to 0\
+	repeat while \cf6 q\cf2  is 0\
+		set \cf3 result\cf2  to \cf8 text returned\cf2  of (\cf7 display dialog\cf2  "Enter a Package Identifier:" \cf7 default answer\cf2  "com.github.first_boot")\
+		if \cf3 result\cf2  is not "" then\
+			set \cf6 pkgid\cf2  to \cf3 result\cf2 \
+			set \cf6 q\cf2  to 1\
+		end if\
+	end repeat\
+	\
+	\cf5 -- this repeat loop prevents empty strings from being submitted for the version identifier value\cf2 \
+	set \cf6 q\cf2  to 0\
+	repeat while \cf6 q\cf2  is 0\
+		set \cf3 result\cf2  to \cf8 text returned\cf2  of (\cf7 display dialog\cf2  "Enter a Version Identifier:" \cf7 default answer\cf2  "1.0")\
+		if \cf3 result\cf2  is not "" then\
+			set \cf6 pkgvers\cf2  to \cf3 result\cf2 \
+			set \cf6 q\cf2  to 1\
+		end if\
+	end repeat\
+	\
+	\cf7 display dialog\cf2  "Do you want all available Apple software updates to be applied before installing your packages?" \cf7 buttons\cf2  \{"No", "Yes"\} \cf7 default button\cf2  2\
+	if \cf8 button returned\cf2  of \cf3 result\cf2  = "No" then\
+		set \cf6 swupdate\cf2  to \cf3 no\cf2 \
+	else\
+		if \cf8 button returned\cf2  of \cf3 result\cf2  = "Yes" then\
+			set \cf6 swupdate\cf2  to \cf3 yes\cf2 \
+		end if\
+	end if\
+	\
+	\cf5 -- Remove any existing build directories that have the same name as the new payload-free package\cf2 \
+	\
+	\cf7 do shell script\cf2  "rm -rf /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Create the build directories for the first boot package\cf2 \
+	\
+	\cf7 do shell script\cf2  "mkdir /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Extract the needed installer components from tar file\cf2 \
+	\
+	\cf7 do shell script\cf2  "mkdir /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build" with \cf7 administrator privileges\cf2 \
+	\cf7 do shell script\cf2  "tar -xzvf /tmp/installer_build_components.tgz -C /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Extract the needed xmlstarlet binary from tar file\cf2 \
+	\
+	\cf7 do shell script\cf2  "mkdir /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/xmlstarlet" with \cf7 administrator privileges\cf2 \
+	\cf7 do shell script\cf2  "tar -xzvf /tmp/xmlstarlet.tgz -C /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/xmlstarlet" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Enable or disable Apple software updates\cf2 \
+	\
+	if \cf6 swupdate\cf2  = \cf3 no\cf2  then\
+		\cf7 do shell script\cf2  "rm /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var/firstbootpackageinstall_yesswupdates.sh" with \cf7 administrator privileges\cf2 \
+		\cf7 do shell script\cf2  "mv /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var/firstbootpackageinstall_noswupdates.sh /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var/firstbootpackageinstall.sh" with \cf7 administrator privileges\cf2 \
+	else\
+		if \cf6 swupdate\cf2  = \cf3 yes\cf2  then\
+			\cf7 do shell script\cf2  "rm /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var/firstbootpackageinstall_noswupdates.sh" with \cf7 administrator privileges\cf2 \
+			\cf7 do shell script\cf2  "mv /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var/firstbootpackageinstall_yesswupdates.sh /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var/firstbootpackageinstall.sh" with \cf7 administrator privileges\cf2 \
+		end if\
+	end if\
+	\
+	\cf5 -- Move the installer packages into the correct build directory\cf2 \
+	\
+	\cf7 do shell script\cf2  "mv /tmp/fb_installers /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build/private/var" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Build the first boot package as a component package\cf2 \
+	\
+	\cf7 do shell script\cf2  "mkdir /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building" with \cf7 administrator privileges\cf2 \
+	\cf7 do shell script\cf2  "pkgbuild --root /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/build --identifier " & \cf3 quoted form\cf2  of \cf6 pkgid\cf2  & " --version " & \cf3 quoted form\cf2  of \cf6 pkgvers\cf2  & " --install-location // /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & ".pkg" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Synthesize a distribution XML file using productbuild for the first boot component package\cf2 \
+	\
+	\cf7 do shell script\cf2  "productbuild --synthesize --package /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & ".pkg /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution1.xml" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Using xmlstarlet to add a title field and product ID field to the distribution XML file.\cf2 \
+	\cf5 -- Source: https://github.com/C4Framework/C4iOSInstaller/blob/78c5e574a65a4c358ef54ea5041c3775f1909a6a/updateDistributionXML.sh\cf2 \
+	\
+	\cf7 do shell script\cf2  "/tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/xmlstarlet/xml ed -s /installer-gui-script -t elem -n product -i /installer-gui-script/product -t attr -n id -v \\"" & \cf6 pkgid\cf2  & "\\" /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution1.xml > /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution2.xml" with \cf7 administrator privileges\cf2 \
+	\
+	\cf7 do shell script\cf2  "/tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/xmlstarlet/xml ed -i /installer-gui-script/product -t attr -n version -v \\"" & \cf6 pkgvers\cf2  & "\\" /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution2.xml > /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution3.xml" with \cf7 administrator privileges\cf2 \
+	\
+	\cf7 do shell script\cf2  "/tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/xmlstarlet/xml ed -s /installer-gui-script -t elem -n title -v \\"" & \cf6 pkgname\cf2  & "\\" /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution3.xml > /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution.xml" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Convert component package to a distribution package using the distribution XML file.\cf2 \
+	\
+	\cf7 do shell script\cf2  "productbuild --distribution /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building/distribution.xml --package-path /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/pkg_building /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & "/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & ".pkg" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Remove installer components tar file\cf2 \
+	\
+	\cf7 do shell script\cf2  "rm /tmp/installer_build_components.tgz" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Remove xmlstarlet tar file\cf2 \
+	\
+	\cf7 do shell script\cf2  "rm /tmp/xmlstarlet.tgz" with \cf7 administrator privileges\cf2 \
+	\
+	\cf5 -- Display dialog that the payload-free package has been created\cf2 \
+	\
+	\cf7 display alert\cf2  ((\cf6 pkgname\cf2 ) as \cf4 string\cf2 ) & ".pkg has been created."\
+	\
+	\cf5 -- Open a new Finder window that shows the new package\cf2 \
+	\
+	\cf7 do shell script\cf2  "open /tmp/" & \cf3 quoted form\cf2  of \cf6 pkgname\cf2  & ""\
+	\
+end \cf4 run\cf2 \
+}
